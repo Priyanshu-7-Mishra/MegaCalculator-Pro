@@ -1,6 +1,6 @@
 {
   "name": "Mega Calculator Pro",
-  "short_name": "Mega Cal Pro",
+  "short_name": "Mega Calc Pro",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -12,11 +12,11 @@
       "type": "image/png"
     },
    {
-    "src": "icons/icon-512.png",
+    "src": "icons/icon-1.png",
     "sizes": "512x512",
     "type": "image/png",
     "purpose": "any maskable"
-  },
+    },
      {
       "src": "icons/icon-3.png",
       "sizes": "180x180",
@@ -36,8 +36,14 @@
     "src": "icons/icon-6.png",
     "sizes": "256x256",
     "type": "image/png"
+    },
+    {
+    "src": "icons/icon-7.png",
+    "sizes": "1024x1024",
+    "type": "image/png",
+    "purpose": "any maskable"
     }
+
 
   ]
 }
-
