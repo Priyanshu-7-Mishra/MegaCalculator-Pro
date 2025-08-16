@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Megacalculator Pro</title>
     <meta name="theme-color" content="#07101a" id="themeColor">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+
+    
+    <!-- For iOS -->
+    <link rel="apple-touch-icon" href="icons/icon-1.png">
+    <link rel="apple-touch-icon" href="icons/icon-2.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
     <!-- Libraries (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/mathjs@11/lib/browser/math.js"></script>
@@ -1664,6 +1675,25 @@ select option:hover {
                 // Add styling class to every select on the page
                 document.querySelectorAll('select').forEach(s => s.classList.add('mcSelect'));
             });
+
+            let deferredPrompt;
+
+                window.addEventListener("beforeinstallprompt", e => {
+                    e.preventDefault();
+                    deferredPrompt = e; // save event for later
+                });
+
+                // Example: trigger when user clicks "Install App" button
+                document.getElementById("installBtn").addEventListener("click", () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then(choice => {
+                            console.log("User choice:", choice.outcome);
+                            deferredPrompt = null;
+                        });
+                    }
+                });
+
 
     </script>
 </body>
