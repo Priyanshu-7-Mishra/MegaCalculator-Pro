@@ -1,0 +1,1045 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Megacalculator Pro</title>
+    <meta name="theme-color" content="#07101a" id="themeColor">
+
+    <!-- Libraries (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11/lib/browser/math.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+    <style>
+        /* THEME VARIABLES */
+        :root {
+            --bg: #07101a;
+            --accent-grad: linear-gradient(90deg, #60e3ff, #8a6bff);
+            --panel: rgba(255, 255, 255, 0.06);
+            --panel-strong: rgba(255, 255, 255, 0.09);
+            --text: #eef6ff;
+            --muted: rgba(238, 246, 255, 0.75);
+            --edge: rgba(255, 255, 255, 0.08);
+            --glass-blur: 12px;
+            --radius: 18px;
+            --shadow: 0 18px 48px rgba(2, 6, 23, 0.6);
+        }
+
+        html[data-theme="light"] {
+            --bg: #f2f7fb;
+            --panel: rgba(255, 255, 255, 0.85);
+            --panel-strong: rgba(255, 255, 255, 0.95);
+            --text: #0b1220;
+            --muted: rgba(10, 20, 30, 0.75);
+            --edge: rgba(10, 20, 30, 0.08);
+            --shadow: 0 12px 36px rgba(14, 20, 34, 0.06);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+
+        body {
+            color: var(--text);
+            background:
+                radial-gradient(1200px 600px at -10% -10%, rgba(10, 25, 45, 0.55), transparent 60%),
+                radial-gradient(900px 500px at 110% 0%, rgba(10, 25, 35, 0.45), transparent 60%),
+                var(--bg);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background .35s ease;
+            overflow-x: hidden;
+        }
+
+        /* LANDING */
+        #landing {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .landing-card {
+            width: min(980px, 95vw);
+            border-radius: 22px;
+            padding: 28px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+            border: 1px solid var(--edge);
+            backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 24px;
+            letter-spacing: .3px;
+            background: var(--accent-grad);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .tagline {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 15px
+        }
+
+        .intro {
+            margin-top: 18px;
+            font-size: 16px;
+            line-height: 1.5;
+            color: var(--muted);
+            min-height: 54px;
+        }
+
+        .continueRow {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid var(--edge);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform .13s;
+        }
+
+        .btn:active {
+            transform: translateY(2px) scale(.995)
+        }
+
+        #landingCanvas {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* APP HEADER */
+        header.appbar {
+            position: sticky;
+            top: 0;
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            backdrop-filter: blur(10px) saturate(120%);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            border-bottom: 1px solid var(--edge);
+        }
+
+        .appLogo {
+            font-weight: 800;
+            font-size: 18px;
+            background: var(--accent-grad);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .tabsRow {
+            display: flex;
+            gap: 8px;
+            margin-left: 12px;
+            flex: 1;
+            align-items: center;
+            overflow: auto;
+        }
+
+        .tabBtn {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: transparent;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .tabBtn.active {
+            background: linear-gradient(90deg, rgba(123, 227, 255, 0.12), rgba(138, 107, 255, 0.08));
+            border-color: var(--edge);
+            transform: translateY(-2px)
+        }
+
+        .rightControls {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .themeToggle {
+            width: 44px;
+            height: 34px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--edge);
+            cursor: pointer;
+            background: transparent
+        }
+
+        .hamburger {
+            width: 46px;
+            height: 38px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            border: 1px solid var(--edge);
+            cursor: pointer;
+            background: transparent
+        }
+
+        .hamburger .lines {
+            width: 22px;
+            height: 16px;
+            position: relative
+        }
+
+        .hamburger .lines::before,
+        .hamburger .lines::after,
+        .hamburger .lines div {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #fff, #bde9ff);
+            border-radius: 2px
+        }
+
+        .hamburger .lines::before {
+            top: 0
+        }
+
+        .hamburger .lines div {
+            top: 7px
+        }
+
+        .hamburger .lines::after {
+            bottom: 0
+        }
+
+        /* MOBILE MENU */
+        .mobileMenu {
+            position: fixed;
+            inset: 0;
+            display: none;
+            z-index: 9500;
+        }
+
+        .mobileMenuBackdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45)
+        }
+
+        .mobileMenuPanel {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 84%;
+            max-width: 420px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            border-right: 1px solid var(--edge);
+            padding: 18px;
+            backdrop-filter: blur(var(--glass-blur));
+            transform: translateX(-8%);
+            box-shadow: var(--shadow);
+        }
+
+        /* MAIN */
+        main.appMain {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 12px;
+        }
+
+        .gridMain {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: 1fr 420px;
+        }
+
+        @media (max-width:980px) {
+            .gridMain {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .card {
+            background: var(--panel);
+            border-radius: 14px;
+            padding: 14px;
+            border: 1px solid var(--edge);
+            box-shadow: var(--shadow)
+        }
+
+        h2.cardTitle {
+            margin: 0 0 8px 0;
+            font-size: 16px
+        }
+
+        .keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px
+        }
+
+        .key {
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid transparent;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+            font-weight: 700
+        }
+
+        .key.op {
+            background: linear-gradient(90deg, #5fd6ff33, #a16dff33)
+        }
+
+        .historyList {
+            max-height: 340px;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 6px
+        }
+
+        .historyItem {
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.12);
+            cursor: pointer;
+            font-size: 13px
+        }
+
+        .historyItem:hover {
+            opacity: .95
+        }
+
+        /* MINI VOICE BUTTON & FLOATING ANSWER */
+        .miniBtn {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            z-index: 9999;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            border: 1px solid var(--edge);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+            box-shadow: 0 18px 48px rgba(2, 6, 23, 0.6);
+        }
+
+        .miniToast {
+            position: fixed;
+            right: 16px;
+            bottom: 86px;
+            min-width: 120px;
+            max-width: 320px;
+            border-radius: 12px;
+            padding: 8px 12px;
+            background: var(--panel);
+            border: 1px solid var(--edge);
+            z-index: 9998;
+            display: none;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+        }
+
+        @media (max-width:480px) {
+            .miniToast {
+                right: 12px;
+                left: 12px;
+                max-width: calc(100vw - 24px)
+            }
+        }
+
+        /* matrix inputs layout container */
+        .matrixGrid {
+            display: grid;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .matrixGrid input {
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid var(--edge);
+            width: 100%;
+            text-align: center;
+        }
+
+        .muted {
+            color: var(--muted)
+        }
+
+        .mono {
+            font-family: ui-monospace, Menlo, Consolas, monospace
+        }
+
+        .small {
+            font-size: 13px
+        }
+
+        @media (max-width:720px) {
+            header.appbar {
+                padding: 10px 12px
+            }
+
+            .tabsRow {
+                display: none
+            }
+
+            .hamburger {
+                display: flex
+            }
+
+            .mobileMenu {
+                display: block
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Landing -->
+    <section id="landing" aria-hidden="false">
+        <canvas id="landingCanvas"></canvas>
+        <div class="landing-card landing-content" role="dialog" aria-label="Welcome to Megacalculator Pro">
+            <div style="display:flex;align-items:center;gap:16px">
+                <div>
+                    <div class="logo">Megacalculator Pro</div>
+                    <div class="tagline">Your all-in-one intelligent calculation powerhouse</div>
+                </div>
+                <div style="margin-left:auto">
+                    <button id="skipIntro" class="btn small">Skip</button>
+                </div>
+            </div>
+            <div class="intro" id="introText" aria-live="polite"></div>
+            <div class="continueRow">
+                <button id="continueBtn" class="btn">Continue</button>
+                <div class="muted small" style="margin-left:auto">Fast • Responsive • Voice • OCR • PWA</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="mobileMenu" aria-hidden="true" style="display:none">
+        <div class="mobileMenuBackdrop" id="mobileBackdrop"></div>
+        <div class="mobileMenuPanel" role="menu">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                <div class="appLogo">Megacalculator Pro</div>
+                <div style="margin-left:auto"><button id="closeMobile" class="btn small">Close</button></div>
+            </div>
+            <div id="mobileMenuItems">
+                <div class="menuItem" data-target="calc">Basic Calculator</div>
+                <div class="menuItem" data-target="graph">Graph Plotter</div>
+                <div class="menuItem" data-target="programmer">Programmer Tools</div>
+                <div class="menuItem" data-target="units">Unit Converter</div>
+                <div class="menuItem" data-target="matrix">Matrix Lab</div>
+                <div class="menuItem" data-target="image">Image → Math</div>
+                <div class="menuItem" data-target="exporter">Export & History</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App header -->
+    <header class="appbar" role="banner" aria-hidden="true" id="appHeader" style="display:none">
+        <div class="appLogo">Megacalculator Pro</div>
+        <div class="tabsRow" id="tabsRow">
+            <button class="tabBtn active" data-target="calc">Basic</button>
+            <button class="tabBtn" data-target="graph">Graph</button>
+            <button class="tabBtn" data-target="programmer">Programmer</button>
+            <button class="tabBtn" data-target="units">Units</button>
+            <button class="tabBtn" data-target="matrix">Matrix</button>
+            <button class="tabBtn" data-target="image">Image→Math</button>
+            <button class="tabBtn" data-target="exporter">Export & History</button>
+        </div>
+
+        <div class="rightControls">
+            <div class="themeToggle" id="themeToggle" title="Toggle theme">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="4"></circle>
+                </svg>
+            </div>
+            <div class="hamburger" id="hamburger" title="Menu">
+                <div class="lines">
+                    <div></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main application -->
+    <main class="appMain" id="appMain" style="display:none" aria-hidden="true">
+        <div class="gridMain">
+            <div>
+                <!-- BASIC -->
+                <section id="calc" class="card section active">
+                    <h2 class="cardTitle">Basic / Natural-Language Calculator</h2>
+                    <div class="muted small">Type or speak: "two multiplied by five", "square root of 25", "cube of 3".
+                        Press Enter to evaluate.</div>
+                    <div style="margin-top:10px">
+                        <input id="calcInput" placeholder="Try: two multiplied by five"
+                            style="padding:12px;border-radius:10px;border:1px solid var(--edge);width:100%" />
+                    </div>
+                    <div class="keys" id="keypad"></div>
+                    <div style="margin-top:12px">
+                        <div class="muted small">Result:</div>
+                        <div id="calcResult" class="mono" style="font-size:18px;margin-top:6px">—</div>
+                    </div>
+                </section>
+
+                <!-- GRAPH -->
+                <section id="graph" class="card section" style="display:none;margin-top:16px">
+                    <h2 class="cardTitle">Graph Plotter</h2>
+                    <div class="small muted">Use math.js syntax: <span class="mono">sin(x), x^2, exp(x)</span></div>
+                    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                        <input id="fn" placeholder="sin(x) * x"
+                            style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--edge)" />
+                        <input id="xmin" type="number" value="-10"
+                            style="width:90px;padding:10px;border-radius:10px;border:1px solid var(--edge)" />
+                        <input id="xmax" type="number" value="10"
+                            style="width:90px;padding:10px;border-radius:10px;border:1px solid var(--edge)" />
+                        <button id="plotBtn" class="btn">Plot</button>
+                    </div>
+                    <div style="height:320px;margin-top:12px">
+                        <canvas id="chartCanvas" style="width:100%;height:100%"></canvas>
+                    </div>
+                </section>
+
+                <!-- PROGRAMMER -->
+                <section id="programmer" class="card section" style="display:none;margin-top:16px">
+                    <h2 class="cardTitle">Programmer Tools</h2>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <div style="flex:1;min-width:160px">
+                            <label class="small muted">Decimal</label>
+                            <input id="dec" value="42"
+                                style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--edge)" />
+                        </div>
+                        <div style="flex:1;min-width:160px">
+                            <label class="small muted">Hex</label>
+                            <input id="hex"
+                                style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--edge)" />
+                        </div>
+                        <div style="flex:1;min-width:160px">
+                            <label class="small muted">Binary</label>
+                            <input id="bin"
+                                style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--edge)" />
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                        <input id="aInt" type="number" value="5"
+                            style="width:120px;padding:10px;border-radius:8px;border:1px solid var(--edge)" />
+                        <select id="bitOp" style="padding:10px;border-radius:8px;border:1px solid var(--edge)">
+                            <option>&</option>
+                            <option>|</option>
+                            <option>^</option>
+                            <option>&lt;&lt;</option>
+                            <option>&gt;&gt;</option>
+                            <option>~ (NOT A)</option>
+                        </select>
+                        <input id="bInt" type="number" value="3"
+                            style="width:120px;padding:10px;border-radius:8px;border:1px solid var(--edge)" />
+                        <button id="computeBits" class="btn">Compute</button>
+                    </div>
+                    <pre id="bitOut" class="mono small" style="margin-top:10px">—</pre>
+                </section>
+
+                <!-- UNITS -->
+                <section id="units" class="card section" style="display:none;margin-top:16px">
+                    <h2 class="cardTitle">Unit Converter</h2>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <select id="cat"
+                            style="padding:10px;border-radius:8px;border:1px solid var(--edge);min-width:160px">
+                            <option value="length">Length</option>
+                            <option value="mass">Mass</option>
+                            <option value="time">Time</option>
+                            <option value="temp">Temperature</option>
+                        </select>
+                        <input id="uVal" type="number" step="any" placeholder="value"
+                            style="padding:10px;border-radius:8px;border:1px solid var(--edge);width:120px" />
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+                        <select id="fromUnit"
+                            style="padding:10px;border-radius:8px;border:1px solid var(--edge)"></select>
+                        <div class="muted small">→</div>
+                        <select id="toUnit"
+                            style="padding:10px;border-radius:8px;border:1px solid var(--edge)"></select>
+                        <button id="doConvert" class="btn">Convert</button>
+                    </div>
+                    <div id="uOut" class="mono small" style="margin-top:10px">—</div>
+                </section>
+
+                <!-- MATRIX -->
+                <section id="matrix" class="card section" style="display:none;margin-top:16px">
+                    <h2 class="cardTitle">Matrix Lab</h2>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                        <div class="small muted">A size:</div>
+                        <input id="rowsA" type="number" min="1" max="8" value="2"
+                            style="width:90px;padding:8px;border-radius:8px;border:1px solid var(--edge)" />
+                        <input id="colsA" type="number" min="1" max="8" value="2"
+                            style="width:90px;padding:8px;border-radius:8px;border:1px solid var(--edge)" />
+                        <div class="small muted" style="margin-left:8px">B size:</div>
+                        <input id="rowsB" type="number" min="1" max="8" value="2"
+                            style="width:90px;padding:8px;border-radius:8px;border:1px solid var(--edge)" />
+                        <input id="colsB" type="number" min="1" max="8" value="2"
+                            style="width:90px;padding:8px;border-radius:8px;border:1px solid var(--edge)" />
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+                        <select id="mOp" style="padding:8px;border-radius:8px;border:1px solid var(--edge)">
+                            <option value="add">A + B</option>
+                            <option value="sub">A − B</option>
+                            <option value="mul">A × B</option>
+                            <option value="div">A · B⁻¹</option>
+                            <option value="det">det(A)</option>
+                            <option value="inv">inv(A)</option>
+                            <option value="transA">transpose(A)</option>
+                            <option value="transB">transpose(B)</option>
+                        </select>
+                        <button id="buildMatrices" class="btn">Build Matrices</button>
+                        <button id="doMatrix" class="btn">Compute</button>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                        <div style="flex:1;min-width:160px">
+                            <div class="muted small">Matrix A</div>
+                            <div id="matA" class="matrixGrid"></div>
+                        </div>
+                        <div style="flex:1;min-width:160px">
+                            <div class="muted small">Matrix B</div>
+                            <div id="matB" class="matrixGrid"></div>
+                        </div>
+                    </div>
+                    <pre id="mOut" class="mono small" style="margin-top:10px">—</pre>
+                </section>
+
+                <!-- IMAGE -->
+                <section id="image" class="card section" style="display:none;margin-top:16px">
+                    <h2 class="cardTitle">Image → Math (OCR)</h2>
+                    <div class="muted small">Upload a clear image of an expression for OCR and basic solution steps.
+                    </div>
+                    <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+                        <input id="imgInput" type="file" accept="image/*" />
+                        <div id="ocrStatus" class="muted small">—</div>
+                    </div>
+                    <pre id="ocrSteps" class="mono small" style="margin-top:10px">—</pre>
+                </section>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <aside>
+                <div class="card">
+                    <h2 class="cardTitle">History (last 30)</h2>
+                    <div id="historyList" class="historyList"></div>
+                </div>
+
+                <div class="card" style="margin-top:12px">
+                    <h2 class="cardTitle">Export</h2>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button id="exportTxt" class="btn">Export TXT</button>
+                        <button id="exportPdf" class="btn">Export PDF</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- MINI VOICE BUTTON -->
+    <button class="miniBtn" id="miniBtn" aria-label="Mini Voice Calc" title="Tap and speak">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <rect x="4" y="3" width="16" height="18" rx="2" stroke="white" stroke-width="1.2" />
+            <circle cx="12" cy="11" r="2" fill="white" />
+        </svg>
+    </button>
+    <div id="miniToast" class="miniToast" role="status" aria-live="polite"></div>
+
+    <script>
+        /* ================= STATE & HISTORY ================= */
+        const STATE = { history: [], maxHistory: 30 };
+        function pushHistory(expr, res) {
+            STATE.history.unshift({ expr: String(expr), res: String(res) });
+            if (STATE.history.length > STATE.maxHistory) STATE.history.length = STATE.maxHistory;
+            renderHistory();
+        }
+        function renderHistory() {
+            const list = document.getElementById('historyList'); list.innerHTML = '';
+            STATE.history.forEach(h => {
+                const d = document.createElement('div'); d.className = 'historyItem mono'; d.textContent = `${h.expr} = ${h.res}`;
+                d.addEventListener('click', () => { document.getElementById('calcInput').value = h.expr; document.getElementById('calcInput').focus(); }, { passive: true });
+                list.appendChild(d);
+            });
+        }
+
+        /* ================= LANDING ANIMATION (canvas particles & symbols) ================= */
+        (function landingAnim() {
+            const canvas = document.getElementById('landingCanvas'); const ctx = canvas.getContext('2d');
+            let w = canvas.width = window.innerWidth, h = canvas.height = window.innerHeight;
+            const symbols = ['π', '√', '∑', '∞', '%', '÷', '×', '∫', 'e', 'Σ', 'Δ'];
+            const parts = []; for (let i = 0; i < 60; i++) { parts.push({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6, r: 0.6 + Math.random() * 2, a: 0.06 + Math.random() * 0.34 }); }
+            const floats = []; for (let i = 0; i < 14; i++) { floats.push({ x: Math.random() * w, y: Math.random() * h * 0.6, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.2) * 0.2, sym: symbols[i % symbols.length], size: 18 + Math.random() * 36, ang: Math.random() * Math.PI * 2 }); }
+            function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+            window.addEventListener('resize', resize, { passive: true });
+            let t = 0;
+            function frame() {
+                t += 0.006; ctx.clearRect(0, 0, w, h);
+                const g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, 'rgba(96,227,255,0.02)'); g.addColorStop(1, 'rgba(138,107,255,0.01)'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+                parts.forEach(p => { p.x += p.vx; p.y += p.vy; if (p.x < 0) p.x += w; if (p.x > w) p.x -= w; if (p.y < 0) p.y += h; if (p.y > h) p.y -= h; ctx.beginPath(); ctx.fillStyle = `rgba(200,230,255,${p.a})`; ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); });
+                floats.forEach(f => { f.x += Math.sin(t * 0.7 + f.ang) * 0.2 + f.vx; f.y += Math.cos(t * 0.9 + f.ang) * 0.1 + f.vy; ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(Math.sin(t + f.ang) * 0.15); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.font = `${f.size}px Inter`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(f.sym, 0, 0); ctx.restore(); });
+                requestAnimationFrame(frame);
+            }
+            frame();
+        })();
+
+        /* ============== LANDING TEXT & OPEN APP ============== */
+        const introPhrases = ["Welcome to Megacalculator Pro", "One tool for every calculation — basics, programming, matrices, graphs & OCR", "Speak naturally — I understand square, sqrt, cube, cbrt, multiply, divide."];
+        let introIndex = 0; const introEl = document.getElementById('introText');
+        function playIntro() { introIndex = 0; introEl.textContent = ''; function showNext() { if (introIndex >= introPhrases.length) return; const s = introPhrases[introIndex++]; let i = 0; introEl.textContent = ''; const iv = setInterval(() => { introEl.textContent += s[i++] || ''; if (i > s.length) { clearInterval(iv); setTimeout(showNext, 600); } }, 28); } showNext(); }
+        playIntro();
+        document.getElementById('continueBtn').addEventListener('click', enterApp, { passive: true });
+        document.getElementById('skipIntro').addEventListener('click', enterApp, { passive: true });
+        function enterApp() {
+            const L = document.getElementById('landing'); L.style.transition = 'opacity .35s ease, transform .35s ease'; L.style.opacity = '0'; L.style.transform = 'scale(.98) translateY(-8px)';
+            setTimeout(() => { L.style.display = 'none'; showApp(); }, 380);
+        }
+        function showApp() {
+            document.getElementById('appHeader').style.display = 'flex'; document.getElementById('appHeader').setAttribute('aria-hidden', 'false');
+            document.getElementById('appMain').style.display = 'block'; document.getElementById('appMain').setAttribute('aria-hidden', 'false');
+            activateSection('calc');
+        }
+
+        /* ================= MOBILE MENU ================= */
+        const hamburger = document.getElementById('hamburger'), mobileMenu = document.getElementById('mobileMenu'), mobileBackdrop = document.getElementById('mobileBackdrop');
+        hamburger.addEventListener('click', () => openMobileMenu(), { passive: true });
+        mobileBackdrop.addEventListener('click', () => closeMobileMenu(), { passive: true });
+        document.getElementById('closeMobile').addEventListener('click', () => closeMobileMenu(), { passive: true });
+        function openMobileMenu() { mobileMenu.style.display = 'block'; mobileMenu.setAttribute('aria-hidden', 'false'); const panel = mobileMenu.querySelector('.mobileMenuPanel'); panel.style.transition = 'transform .32s cubic-bezier(.2,.9,.28,1), opacity .32s'; panel.style.transform = 'translateX(0)'; panel.style.opacity = '1'; }
+        function closeMobileMenu() { const panel = mobileMenu.querySelector('.mobileMenuPanel'); panel.style.transition = 'transform .28s ease, opacity .28s ease'; panel.style.transform = 'translateX(-8%)'; panel.style.opacity = '0'; setTimeout(() => { mobileMenu.style.display = 'none'; mobileMenu.setAttribute('aria-hidden', 'true'); }, 300); }
+        document.querySelectorAll('#mobileMenuItems .menuItem').forEach(it => it.addEventListener('click', () => { activateSection(it.dataset.target); closeMobileMenu(); }, { passive: true }));
+
+        /* ================= TABS ACTIVATION ================ */
+        document.querySelectorAll('.tabBtn').forEach(btn => btn.addEventListener('click', () => activateSection(btn.dataset.target), { passive: true }));
+        function activateSection(id) {
+            document.querySelectorAll('.tabBtn').forEach(b => b.classList.toggle('active', b.dataset.target === id));
+            document.querySelectorAll('.section').forEach(s => s.style.display = (s.id === id ? 'block' : 'none'));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /* ================= THEME PERSIST ================= */
+        const themeToggle = document.getElementById('themeToggle');
+        (function initTheme() { const saved = localStorage.getItem('mcp_theme'); if (saved) document.documentElement.setAttribute('data-theme', saved); document.getElementById('themeColor').setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--bg')); })();
+        themeToggle.addEventListener('click', () => { const cur = document.documentElement.getAttribute('data-theme') || 'dark'; const next = cur === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', next); localStorage.setItem('mcp_theme', next); document.getElementById('themeColor').setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--bg')); });
+
+        /* =============== KEYPAD (main) =============== */
+        const keypadLayout = ['7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '(', ')', 'C', '⌫', '=', '+'];
+        const keypadEl = document.getElementById('keypad');
+        keypadLayout.forEach(k => {
+            const el = document.createElement('div'); el.className = 'key' + (['/', '*', '-', '+', '=', 'C', '⌫'].includes(k) ? ' op' : ''); el.textContent = k;
+            function handler(e) { e.preventDefault && e.preventDefault(); const inp = document.getElementById('calcInput'); if (k === 'C') { inp.value = ''; document.getElementById('calcResult').textContent = '—'; return; } if (k === '⌫') { inp.value = inp.value.slice(0, -1); return; } if (k === '=') { evaluateMain(); return; } inp.value += k; }
+            el.addEventListener('mousedown', handler); el.addEventListener('touchstart', handler, { passive: false }); keypadEl.appendChild(el);
+        });
+
+        /* ============ NATURAL-LANGUAGE PARSING ============ */
+        function wordsToMath(str) {
+            if (!str) return '';
+            let s = ' ' + String(str).toLowerCase().trim() + ' ';
+            s = s.replace(/×/g, ' * ').replace(/÷/g, ' / ').replace(/—/g, ' - ');
+            s = s.replace(/\b(square root of|sqrt of|sqrt)\b/g, ' sqrt ');
+            s = s.replace(/\b(cube root of|cbrt of|cube root)\b/g, ' cbrt ');
+            s = s.replace(/\b(square of|square)\b/g, ' (x^2) ');
+            s = s.replace(/\b(cube of|cube)\b/g, ' (x^3) ');
+            const small = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
+            const tens = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+            Object.keys(small).forEach(k => s = s.replace(new RegExp('\\b' + k + '\\b', 'g'), String(small[k])));
+            Object.keys(tens).forEach(k => s = s.replace(new RegExp('\\b' + k + '\\b', 'g'), String(tens[k])));
+            s = s.replace(/\b(hundred)\b/g, ' * 100 '); s = s.replace(/\b(thousand)\b/g, ' * 1000 ');
+            s = s.replace(/\b(plus|add|added to)\b/g, ' + ');
+            s = s.replace(/\b(minus|subtract|less)\b/g, ' - ');
+            s = s.replace(/\b(into|multiply|multiplied by|times)\b/g, ' * ');
+            s = s.replace(/\b(divide|divided by|over|by)\b/g, ' / ');
+            s = s.replace(/\b(power of|to the power of|to the power)\b/g, ' ^ ');
+            s = s.replace(/\s+/g, ' ').trim();
+            return s;
+        }
+
+        /* ============ MAIN EVALUATE ============ */
+        function evaluateMain() {
+            const raw = document.getElementById('calcInput').value.trim();
+            if (!raw) return;
+            let expr = raw;
+            if (/[a-z]/i.test(raw)) expr = wordsToMath(raw);
+            expr = expr.replace(/\(x\^2\)\s*([0-9.]+)?/g, (m, n) => n ? `(${n}^2)` : m);
+            try {
+                const v = math.evaluate(expr);
+                const res = (typeof v === 'number' && !Number.isFinite(v)) ? 'NaN' : String(v);
+                document.getElementById('calcResult').textContent = res;
+                pushHistory(raw, res);
+            } catch (e) { document.getElementById('calcResult').textContent = 'Error'; }
+        }
+        document.getElementById('calcInput').addEventListener('keydown', e => { if (e.key === 'Enter') evaluateMain(); });
+
+        /* ============ GRAPH (Chart.js) ============ */
+        let chartInstance = null;
+        document.getElementById('plotBtn').addEventListener('click', () => {
+            const f = document.getElementById('fn').value || 'sin(x)';
+            const xmin = Number(document.getElementById('xmin').value || -10);
+            const xmax = Number(document.getElementById('xmax').value || 10);
+            const N = 600;
+            const xs = Array.from({ length: N }, (_, i) => xmin + (i * (xmax - xmin)) / (N - 1));
+            let ys = [];
+            try {
+                const compiled = math.parse(f).compile();
+                ys = xs.map(x => { try { return compiled.evaluate({ x }); } catch { return NaN; } });
+            } catch (e) { alert('Invalid function'); return; }
+            const canvas = document.getElementById('chartCanvas');
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            const ctx = canvas.getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: xs, datasets: [{ data: ys, borderWidth: 2, pointRadius: 0, borderColor: '#7be3ff' }] },
+                options: { animation: { duration: 600 }, parsing: false, normalized: true, scales: { x: { type: 'linear', display: true }, y: { display: true } }, plugins: { legend: { display: false } }, maintainAspectRatio: false, responsive: true }
+            });
+            setTimeout(() => chartInstance.resize(), 120);
+        });
+
+        /* ============ PROGRAMMER ============ */
+        function syncBasesFrom(value, type) {
+            let n;
+            try { if (type === 'dec') n = parseInt(value, 10); if (type === 'hex') n = parseInt(value.replace(/^0x/i, ''), 16); if (type === 'bin') n = parseInt(value.replace(/^0b/i, ''), 2); } catch (e) { }
+            if (Number.isNaN(n)) return;
+            document.getElementById('dec').value = n;
+            document.getElementById('hex').value = '0x' + (n >>> 0).toString(16).toUpperCase();
+            document.getElementById('bin').value = '0b' + (n >>> 0).toString(2);
+        }
+        document.getElementById('dec').addEventListener('input', e => syncBasesFrom(e.target.value, 'dec'));
+        document.getElementById('hex').addEventListener('input', e => syncBasesFrom(e.target.value, 'hex'));
+        document.getElementById('bin').addEventListener('input', e => syncBasesFrom(e.target.value, 'bin'));
+        syncBasesFrom('42', 'dec');
+
+        document.getElementById('computeBits').addEventListener('click', () => {
+            const A = Number(document.getElementById('aInt').value || 0), B = Number(document.getElementById('bInt').value || 0);
+            const op = document.getElementById('bitOp').value; let r;
+            try {
+                switch (op) { case '&': r = A & B; break; case '|': r = A | B; break; case '^': r = A ^ B; break; case '<<': r = A << B; break; case '>>': r = A >> B; break; default: r = ~A; }
+                document.getElementById('bitOut').textContent = `A=${A} (${(A >>> 0).toString(2)})\nB=${B} (${(B >>> 0).toString(2)})\nop=${op}\n= ${r} (bin ${(r >>> 0).toString(2)})`;
+                pushHistory(`bit:${A}${op}${B}`, r);
+            } catch (e) { document.getElementById('bitOut').textContent = 'Error'; }
+        });
+
+        /* ============ UNIT CONVERTER ============ */
+        const unitCatalog = { length: { m: 1, km: 1000, cm: 0.01, mm: 0.001, mi: 1609.344, ft: 0.3048, in: 0.0254 }, mass: { kg: 1, g: 0.001, lb: 0.45359237, oz: 0.028349523125 }, time: { s: 1, min: 60, hr: 3600 }, temp: { C: 'C', F: 'F', K: 'K' } };
+        const catSel = document.getElementById('cat'), fromUnit = document.getElementById('fromUnit'), toUnit = document.getElementById('toUnit');
+        function loadUnits() { const cat = catSel.value; fromUnit.innerHTML = ''; toUnit.innerHTML = ''; Object.keys(unitCatalog[cat]).forEach(u => { const o1 = new Option(u, u); const o2 = new Option(u, u); fromUnit.add(o1); toUnit.add(o2); }); }
+        catSel.addEventListener('change', loadUnits); loadUnits();
+        function convertTemp(v, from, to) { let K; if (from === 'C') K = v + 273.15; else if (from === 'F') K = (v - 32) * 5 / 9 + 273.15; else K = v; if (to === 'C') return K - 273.15; if (to === 'F') return (K - 273.15) * 9 / 5 + 32; return K; }
+        document.getElementById('doConvert').addEventListener('click', () => { const cat = catSel.value; const v = Number(document.getElementById('uVal').value); const from = fromUnit.value, to = toUnit.value; if (!Number.isFinite(v)) { document.getElementById('uOut').textContent = 'Enter a number'; return; } let out; if (cat === 'temp') out = convertTemp(v, from, to); else out = v * unitCatalog[cat][from] / unitCatalog[cat][to]; document.getElementById('uOut').textContent = `${v} ${from} = ${out} ${to}`; pushHistory(`${v}${from}->${to}`, out); });
+
+        /* ============ MATRIX - robust build & read ============ */
+        function buildMatrixInputs(rows, cols, containerId) {
+            const container = document.getElementById(containerId); container.innerHTML = ''; container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            container.classList.add('matrixGrid');
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.placeholder = `${r + 1},${c + 1}`; inp.dataset.pos = `${r},${c}`; inp.style.padding = '6px'; inp.style.borderRadius = '6px'; inp.style.border = '1px solid var(--edge)'; container.appendChild(inp);
+                }
+            }
+        }
+        function readMatrix(containerId, rows, cols) {
+            const container = document.getElementById(containerId); const inputs = Array.from(container.querySelectorAll('input'));
+            const M = []; for (let r = 0; r < rows; r++) { const row = []; for (let c = 0; c < cols; c++) { const idx = r * cols + c; const val = Number(inputs[idx]?.value || 0); row.push(val); } M.push(row); } return M;
+        }
+        document.getElementById('buildMatrices').addEventListener('click', () => {
+            const rA = Math.max(1, Math.min(8, Number(document.getElementById('rowsA').value || 2)));
+            const cA = Math.max(1, Math.min(8, Number(document.getElementById('colsA').value || 2)));
+            const rB = Math.max(1, Math.min(8, Number(document.getElementById('rowsB').value || 2)));
+            const cB = Math.max(1, Math.min(8, Number(document.getElementById('colsB').value || 2)));
+            buildMatrixInputs(rA, cA, 'matA'); buildMatrixInputs(rB, cB, 'matB');
+        });
+        document.getElementById('doMatrix').addEventListener('click', () => {
+            const rA = Math.max(1, Math.min(8, Number(document.getElementById('rowsA').value || 2)));
+            const cA = Math.max(1, Math.min(8, Number(document.getElementById('colsA').value || 2)));
+            const rB = Math.max(1, Math.min(8, Number(document.getElementById('rowsB').value || 2)));
+            const cB = Math.max(1, Math.min(8, Number(document.getElementById('colsB').value || 2)));
+            const op = document.getElementById('mOp').value;
+            try {
+                const A = readMatrix('matA', rA, cA);
+                let out;
+                if (op === 'add' || op === 'sub') {
+                    if (rA !== rB || cA !== cB) throw new Error('A and B must have same dimensions for add/sub.');
+                    const B = readMatrix('matB', rB, cB); out = (op === 'add') ? math.add(A, B) : math.subtract(A, B);
+                } else if (op === 'mul') {
+                    if (cA !== rB) throw new Error('A.cols must equal B.rows for multiplication.');
+                    const B = readMatrix('matB', rB, cB); out = math.multiply(A, B);
+                } else if (op === 'div') {
+                    if (cB !== rB) throw new Error('B must be square and invertible for division.');
+                    const B = readMatrix('matB', rB, cB); out = math.multiply(A, math.inv(B));
+                } else if (op === 'det') {
+                    if (rA !== cA) throw new Error('A must be square for determinant.');
+                    out = math.det(A);
+                } else if (op === 'inv') {
+                    if (rA !== cA) throw new Error('A must be square for inverse.');
+                    out = math.inv(A);
+                } else if (op === 'transA') { out = math.transpose(A); }
+                else if (op === 'transB') { const B = readMatrix('matB', rB, cB); out = math.transpose(B); }
+                document.getElementById('mOut').textContent = Array.isArray(out) ? out.map(row => row.join('\t')).join('\n') : String(out);
+                pushHistory(`matrix:${op}`, JSON.stringify(out));
+            } catch (e) { document.getElementById('mOut').textContent = 'Error: ' + e.message; }
+        });
+
+        /* ============ IMAGE OCR ============ */
+        document.getElementById('imgInput').addEventListener('change', async (e) => {
+            const f = e.target.files[0]; if (!f) return; document.getElementById('ocrStatus').textContent = 'Reading…'; document.getElementById('ocrSteps').textContent = '—';
+            try {
+                const worker = Tesseract.createWorker({ logger: m => { document.getElementById('ocrStatus').textContent = `${m.status} ${Math.round((m.progress || 0) * 100)}%`; } });
+                await worker.load(); await worker.loadLanguage('eng'); await worker.initialize('eng');
+                const { data: { text } } = await worker.recognize(f);
+                await worker.terminate();
+                const expr = text.replace(/\s+/g, ' ').trim(); document.getElementById('ocrStatus').textContent = 'Done';
+                const steps = solveWithSteps(expr); document.getElementById('ocrSteps').textContent = steps;
+            } catch (e) { document.getElementById('ocrStatus').textContent = 'OCR failed'; document.getElementById('ocrSteps').textContent = 'Try clearer image'; }
+        });
+        function solveWithSteps(exprRaw) {
+            const expr = exprRaw.replace(/[^\d\.\+\-\*\/\^\(\)=x]/gi, '');
+            if (!expr) return 'No readable math.';
+            const m = expr.match(/^\s*([\-]?\d*\.?\d*)x\s*([+\-]\s*\d*\.?\d*)\s*=\s*([\-]?\d*\.?\d*)\s*$/i);
+            if (m) { const a = parseFloat(m[1] || '1'); const b = parseFloat(m[2].replace(/\s/g, '')); const c = parseFloat(m[3]); const s1 = `${a}x + ${b} = ${c}`; const s2 = `${a}x = ${c} ${b < 0 ? '+' : '-'} ${Math.abs(b)} ⇒ ${a}x = ${c - b}`; const s3 = `x = ${(c - b)}/${a} ⇒ x = ${(c - b) / a}`; pushHistory(expr, (c - b) / a); return `Expression: ${expr}\n\nSteps:\n1) ${s1}\n2) ${s2}\n3) ${s3}`; }
+            try { const res = math.evaluate(expr); pushHistory(expr, res); return `Expression: ${expr}\nResult: ${res}`; } catch (e) { return `Can't solve (MVP: basic arithmetic & linear eqns).`; }
+        }
+
+        /* ============ EXPORT TXT/PDF ============ */
+        function downloadTxt() { const sec = document.querySelector('.section:not([style*="display:none"])') || document.body; const text = sec.innerText || document.body.innerText; const blob = new Blob([text], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Megacalculator_Pro.txt'; a.click(); a.remove(); }
+        async function downloadPdf() { const { jsPDF } = window.jspdf || {}; if (!jsPDF) { alert('jsPDF missing'); return; } const doc = new jsPDF(); const sec = document.querySelector('.section:not([style*="display:none"])') || document.body; let y = 20; doc.setFontSize(14); doc.text('Megacalculator Pro', 12, y); y += 8; doc.setFontSize(10); const lines = doc.splitTextToSize(sec.innerText || '', 180); lines.forEach(line => { y += 6; if (y > 270) { doc.addPage(); y = 20 } doc.text(line, 12, y); }); doc.save('Megacalculator_Pro.pdf'); }
+        document.getElementById('exportTxt').addEventListener('click', downloadTxt);
+        document.getElementById('exportPdf').addEventListener('click', downloadPdf);
+
+        /* ============ MINI VOICE ONLY (no expand) ============ */
+        const miniBtn = document.getElementById('miniBtn'), miniToast = document.getElementById('miniToast');
+        let miniRec;
+        (function setupMiniVoice() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { miniBtn.title = 'Voice not supported'; return; }
+            miniRec = new SR(); miniRec.lang = 'en-IN'; miniRec.interimResults = false; miniRec.maxAlternatives = 1;
+            miniRec.onresult = (ev) => {
+                const said = ev.results[0][0].transcript;
+                // parse and evaluate
+                let expr = said;
+                if (/[a-z]/i.test(said)) expr = wordsToMath(said);
+                expr = expr.replace(/\(x\^2\)\s*([0-9.]+)?/g, (m, n) => n ? `(${n}^2)` : m);
+                try {
+                    const res = math.evaluate(expr);
+                    const text = `${said} = ${res}`;
+                    showMiniToast(text);
+                    pushHistory(said, res);
+                    speak(String(res));
+                } catch (e) {
+                    showMiniToast('Could not compute');
+                    speak('Could not compute');
+                }
+            };
+            miniRec.onend = () => { /* finish listening */ };
+        })();
+        miniBtn.addEventListener('click', () => {
+            if (!miniRec) { alert('Voice not supported in this browser'); return; }
+            miniToast.style.display = 'block'; miniToast.textContent = 'Listening…'; miniRec.start();
+        });
+        function showMiniToast(text) {
+            miniToast.style.display = 'block'; miniToast.textContent = text;
+            setTimeout(() => miniToast.style.display = 'none', 5000);
+        }
+        function speak(txt) { try { const u = new SpeechSynthesisUtterance(String(txt)); u.rate = 1; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { } }
+
+        /* ============ Keyboard shortcuts ============ */
+        document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') { document.getElementById('calcInput').focus(); e.preventDefault(); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') { activateSection('graph'); e.preventDefault(); } });
+
+        /* ============ Make tap targets friendly (touch) ============ */
+        ['click', 'touchstart'].forEach(evt => { document.querySelectorAll('button, .key, .tabBtn, .menuItem, .historyItem').forEach(el => { el.addEventListener(evt, () => { }, { passive: true }); }); });
+
+        /* ============ initial UI state ============ */
+        buildMatrixInputs(2, 2, 'matA'); buildMatrixInputs(2, 2, 'matB'); renderHistory();
+
+        /* =================== PWA: dynamic manifest + service worker registration =================== */
+        /* We create a manifest blob and a service worker blob at runtime so this single-file demo becomes installable/cachable. */
+        (async function installPWA() {
+            try {
+                // Create simple manifest
+                const manifest = {
+                    name: "Megacalculator Pro",
+                    short_name: "Megacalc",
+                    start_url: ".",
+                    display: "standalone",
+                    background_color: "#07101a",
+                    theme_color: "#07101a",
+                    icons: [
+                        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192'%3E%3Crect width='100%25' height='100%25' rx='24' fill='%2307111a'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-size='72' fill='%23fff' font-family='Arial' dy='.25em'%3E%F0%9F%92%8C%3C/text%3E%3C/svg%3E", sizes: "192x192", type: "image/svg+xml" }
+                    ]
+                };
+                const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+                const manifestURL = URL.createObjectURL(manifestBlob);
+                const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestURL; document.head.appendChild(link);
+
+                // Service worker source (basic caching)
+                const swCode = `
+                const CACHE_NAME = 'megacalculator-pro-v1';
+                const URLS = ['.'];
+                self.addEventListener('install', event => {
+                    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(URLS)).catch(()=>{}));
+                    self.skipWaiting();
+                });
+                self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
+                self.addEventListener('fetch', event => {
+                    if(event.request.method !== 'GET') return;
+                    event.respondWith(caches.match(event.request).then(resp => {
+                    return resp || fetch(event.request).then(fetchResp => {
+                        return caches.open(CACHE_NAME).then(cache => { cache.put(event.request, fetchResp.clone()); return fetchResp; });
+                    }).catch(()=> caches.match('.'));
+                    }));
+                });
+                `;
+                        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+                if ('serviceWorker' in navigator) {
+                    await navigator.serviceWorker.register(swUrl).catch(() => {/* ignore registration errors */ });
+                }
+            } catch (e) { console.warn('PWA setup failed', e); }
+        })();
+
+    </script>
+</body>
+
+</html>
