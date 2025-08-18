@@ -5,18 +5,27 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Megacalculator Pro</title>
-    <meta name="theme-color" content="#07101a" id="themeColor">
+    <meta name="theme-color" content=" " id="themeColor">
+    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0d6efd">
-    <link rel="icon" type="image/png" href="icons/icon-192.png">
-
     
-    <!-- For iOS -->
-    <link rel="apple-touch-icon" href="icons/icon-1.png">
-    <link rel="apple-touch-icon" href="icons/icon-2.png">
-
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+    
+    <!-- Theme colors (Adaptive: Light / Dark) -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    
+    <!-- iOS PWA Support -->
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-icon-180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-icon-152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/apple-icon-167.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="icons/apple-icon-120.png">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 
     <!-- Libraries (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/mathjs@11/lib/browser/math.js"></script>
